@@ -1,0 +1,119 @@
+select * from portfolio..newcovid19
+
+
+--date format change
+
+select date,convert(date,date)
+from portfolio..newcovid19
+
+alter table newcovid19
+add dateforamte date
+
+update newcovid19
+set dateforamte = convert(date,date)
+
+
+---populate properly address
+
+select *
+from portfolio..newcovid19
+where address1 is null
+order by iso_code
+
+select a.iso_code,a.address ,b.iso_code b.address1,is null (a.address b.address1)
+from portfolio..newcovid19 a
+join portfolio..newcovid19 b
+on a.iso_code = b.iso_code
+and a.[iso_code] <> b.[iso_code]
+where address1 is null
+
+
+
+
+--breking out address into individual colum 
+
+select SUBSTRING(address1,1,CHARINDEX(' ',address1)+1) as statecade,
+SUBSTRING(address1,CHARINDEX(' ',address1) -1 ,len(address1)) city
+from portfolio..newcovid19
+
+
+alter table portfolio..newcovid19
+add address nvarchar(50)
+
+update portfolio..newcovid19
+set address = SUBSTRING(address1,1,CHARINDEX(' ',address1)+1)
+
+
+alter table portfolio..newcovid19
+add address nvarchr(255)
+
+
+update portfolio..newcovid19
+set address = SUBSTRING(address1,CHARINDEX(' ',address1) -1 ,len(address1)) 
+
+
+--replase _ to ,
+
+select PARSENAME(REPLACE(address,'_',' '),1)
+from portfolio..newcovid19
+
+
+--change y and n to yes and no
+
+select * from portfolio..newcovid19
+
+select distinct(status),count(status)
+from portfolio..newcovid19
+group by status
+order by 2
+
+
+select status,
+case when status = 'y' then'yes'
+     when status = 'N' then 'NO'
+     else status
+     end
+from portfolio..newcovid19
+
+update portfolio..newcovid19
+set status =case when status = 'y' then 'yes'
+when status = 'N' then 'No'
+else status
+end
+
+
+select count(iso_code)
+from portfolio..newcovid19
+group by iso_code
+having count(iso_code)>1
+
+
+select iso_code,count(iso_code)
+from portfolio..newcovid19
+group by iso_code
+
+
+select * from portfolio..newcovid19
+group by iso_code,location,totalcases,total_deaths,date,status,address,address1,dateforamte,city,address
+having count(iso_code)>1
+
+-- remove duplicate
+
+with row_numCTE as (
+select *, row_number() over (partition by iso_code,location,totalcases,total_deaths,date,status order by iso_code) row_num
+from portfolio..newcovid19
+)
+select * from row_numCTE
+where row_num >1
+
+
+alter table portfolio..newcovid19
+drop column date
+
+
+
+
+
+
+
+
